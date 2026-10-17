@@ -1,0 +1,38 @@
+# LangChain Core
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+
+# LangChain Agents / Models
+langchain-openai
+langchain-groq
+langchain-google-genai
+
+# Environment & Utilities
+python-dotenv
+pydantic
+requests
+rich
+
+# Web Search / Research
+tavily-python
+
+# Vector Databases / RAG
+chromadb
+langchain-chroma
+
+# Document Loading
+pypdf
+docx2txt
+
+# Tokenization
+tiktoken
+
+# Data / ML
+numpy
+pandas
+scikit-learn
+
+# UI
+streamlit
