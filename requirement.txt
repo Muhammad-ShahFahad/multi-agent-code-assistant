@@ -36,3 +36,7 @@ scikit-learn
 
 # UI
 streamlit
+
+# Web_scrapping
+langchain-tavily
+beautifulsoup4

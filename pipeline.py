@@ -6,8 +6,7 @@ from chains import (
 )
 from supervisor import supervisor_agent_chain
 
-
-def code_assistance_pipeline(topic: str) -> dict:
+def code_assistance_pipeline(topic: str, existing_code: str ="") -> dict:
     state = {}
     chain_names = {
         "writer":write_agent_chain,
@@ -22,16 +21,23 @@ def code_assistance_pipeline(topic: str) -> dict:
     print(state)
 
     for agent_call in state["supervisor_agent_response"].agents:
+
         if agent_call == "writer":
-            state["writer_agent_response"] = chain_names[agent_call].invoke({
+            state["writer_agent_response"] = write_agent_chain.invoke({
                 "user_request": topic
             })
-        else:
-            state[f"{agent_call}_agent_response"] = chain_names[agent_call].invoke({
+
+        elif agent_call == "explainer":
+            state["explainer_agent_response"] = explainer_agent_chain.invoke({
                 "user_request": topic,
-                "code": state["writer_agent_response"]
+                "code": state.get("writer_agent_response", "")
             })
 
+        elif agent_call == "reviewer":
+            state["reviewer_agent_response"] = reviewer_agent_chain.invoke({
+                "user_request": topic,
+                "code": state.get("writer_agent_response", existing_code)
+            })
 
     print("\n" + "=" * 50)
     print("Final response agent is preparing the response")

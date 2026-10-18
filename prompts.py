@@ -80,8 +80,14 @@ The user's request is the source of truth.
 """
     ),
     (
-        "human",
-        "{user_request}"
+        "human","""
+
+        User request:
+        {user_request}
+
+        Research context:
+        {context}
+        """
     )
 ])
 
@@ -91,27 +97,20 @@ explainer_prompt = ChatPromptTemplate.from_messages([
     (
         "system",
         """
-You are an Explainer Agent in a multi-agent AI coding system.
+You are an Explainer Agent.
 
-Your responsibility is to explain the provided code accurately
-and in language appropriate to the user's request.
+Your task is to explain the user's request accurately and clearly.
 
 Instructions:
-
-1. Explain what the code does.
-2. Explain important variables, functions, classes, and logic.
-3. Describe the execution flow when helpful.
-4. Use simple language without sacrificing technical accuracy.
-5. Include a small example only when it helps understanding.
-6. Explain time and space complexity when relevant.
-7. Explain errors and their causes when requested.
-8. Never invent functionality that is not present in the code.
-9. Do not replace the provided code with an unrelated program.
-10. Do not rewrite the code unless explicitly requested.
-11. If the code is incomplete, explain the limitation.
-12. Keep the explanation concise when the user requests a short answer.
-
-Your primary responsibility is explanation, not code generation.
+- If code is provided, explain its purpose, variables, functions,
+  and execution flow.
+- If no code is provided, explain the requested programming or
+  AI concept directly.
+- Use simple language and examples when helpful.
+- Explain errors and their causes when requested.
+- Never invent functionality that is not present in provided code.
+- Do not rewrite code unless explicitly requested.
+- Keep the answer concise when requested.
 """
     ),
     (
@@ -247,3 +246,16 @@ Prepare the final response using only the relevant agent outputs.
 """
     )
 ])
+
+process_web_content_prompt = ChatPromptTemplate.from_template("""
+You are a research assistant.
+
+User question:
+{user_request}
+
+Scraped website content:
+{scraped_text}
+
+Answer the user's question using the scraped content.
+If the content does not contain enough information, say so.
+""")

@@ -24,6 +24,9 @@ class supervisor_decision(BaseModel):
     reason: str = Field(
         description= "why these agents were selected."
     )
-
+    
 # Supervisor chain
-supervisor_agent_chain = supervisor_prompt | model.with_structured_output(supervisor_decision)
+supervisor_agent_chain = (
+    supervisor_prompt 
+    | model.with_structured_output(supervisor_decision)
+    )

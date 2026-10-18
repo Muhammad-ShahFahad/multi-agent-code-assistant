@@ -1,291 +1,305 @@
-🤖 LLM-Based Multi-Agent Code Assistant
+# 🤖 Multi-Agent Code Assistant
 
-A **multi-agent AI code assistant** built with **Python, LangChain, and Groq**. The system dynamically decides which specialized agents should handle a user's coding request and then combines their outputs into a final response.
+A Python-based multi-agent AI system built with **LangChain, LCEL, and Groq**. It uses a supervisor to dynamically route user requests to specialized agents for code generation, code review, and code explanation, then combines their outputs into a final response.
 
-🚀 Overview
+The project explores how specialized LLM agents can collaborate through structured routing, sequential execution, and reusable processing chains.
 
-Instead of using a single LLM for every task, this project uses multiple specialized agents:
+## 🚀 Key Features
 
-- **Writer Agent** — Generates the requested code.
-- **Reviewer Agent** — Reviews the generated code for errors, edge cases, and improvements.
-- **Explainer Agent** — Explains the code in a clear and understandable way.
-- **Supervisor Agent** — Decides which agents are needed and determines their execution order.
-- **Final Response Agent** — Combines the relevant outputs into the final answer.
+- **Supervisor-based orchestration** — selects the agents required for each request.
+- **Code generation** — generates code according to the user's requirements.
+- **Code review** — identifies potential bugs, logical errors, edge cases, and improvements.
+- **Code explanation** — explains programming concepts and code in understandable language.
+- **Structured output** — uses Pydantic to define the supervisor's routing decisions.
+- **LCEL pipelines** — composes prompts, models, and output parsers into reusable chains.
+- **Web research tools** — integrates Tavily Search and Beautiful Soup for searching and extracting webpage content.
+- **Final response synthesis** — combines relevant agent outputs into a single response.
+- **Environment-based configuration** — manages API keys through environment variables.
 
-The important part is that the system is **dynamic**. For example:
+## 🏗️ Architecture
 
-```text
-User Request
-     ↓
-Supervisor Agent
-     ↓
-Selects required agents
-     ↓
-Writer → Reviewer → Explainer
-     ↓
-Final Response Agent
-     ↓
-Final Answer
-```
-
-🧠 Architecture
+The supervisor determines which agents should execute and in what order. The selected agents run sequentially, and their outputs are passed to the final response agent.
 
 ```text
-                    ┌──────────────────┐
-                    │   User Request   │
-                    └────────┬─────────┘
-                             ↓
-                    ┌──────────────────┐
-                    │ Supervisor Agent │
-                    └────────┬─────────┘
-                             ↓
-              ┌──────────────┼──────────────┐
-              ↓              ↓              ↓
-          Writer         Reviewer       Explainer
-              │              │              │
-              └──────────────┼──────────────┘
-                             ↓
-                  ┌─────────────────────┐
-                  │ Final Response Agent│
-                  └──────────┬──────────┘
-                             ↓
-                       Final Answer
+                 ┌────────────────────┐
+                 │    User Request    │
+                 └─────────┬──────────┘
+                           │
+                           ▼
+                 ┌────────────────────┐
+                 │  Supervisor Agent  │
+                 │  Pydantic Routing  │
+                 └─────────┬──────────┘
+                           │
+                           ▼
+                 ┌────────────────────┐
+                 │  Selected Agents   │
+                 └─────────┬──────────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+          Writer        Reviewer      Explainer
+             │             │             │
+             └─────────────┼─────────────┘
+                           │
+                           ▼
+                 ┌────────────────────┐
+                 │ Final Response     │
+                 │ Agent              │
+                 └─────────┬──────────┘
+                           │
+                           ▼
+                    Final Answer
 ```
 
-✨ Key Features
+The agents are not all required for every request. For example, a conceptual question may only need the explainer, while a request to generate, review, and explain code may require all three specialized agents.
 
-- Multi-agent architecture
-- Dynamic agent selection
-- Specialized coding, reviewing, and explaining agents
-- Structured output from the supervisor using **Pydantic**
-- LangChain LCEL chains
-- Sequential agent execution
-- Agents can pass outputs to other agents
-- Final response synthesis
-- No external tools required
-- Environment variables for API key management
+### Agent Responsibilities
 
-📁 Project Structure
+| Agent | Responsibility |
+|---|---|
+| **Supervisor** | Analyzes the request and selects agents in execution order. |
+| **Writer** | Generates code based on the user's requirements. |
+| **Reviewer** | Reviews code for correctness, edge cases, and potential improvements. |
+| **Explainer** | Explains code or programming concepts. |
+| **Final Response** | Produces the final answer from the relevant agent outputs. |
+| **Research Agent** | Uses web-search and scraping tools when research is required by the writer workflow. |
+
+## 🧠 How It Works
+
+1. **Receive request:** The user submits a coding or programming-related question.
+2. **Determine workflow:** The supervisor produces a structured routing decision.
+3. **Execute selected agents:** The pipeline invokes the selected agents in the specified order.
+4. **Gather research when needed:** The writer workflow can invoke the research agent, which has access to Tavily Search and website-scraping tools.
+5. **Share outputs:** Relevant agent results are stored in the pipeline state and passed to downstream agents.
+6. **Generate final response:** The final response agent combines the available outputs into an answer suited to the original request.
+
+## 🔍 Web Research
+
+The project includes two research tools:
+
+- **Tavily Search:** Finds relevant webpages for a given query.
+- **Beautiful Soup:** Extracts readable text from webpage HTML fetched using Requests.
+
+The research agent can use these tools to gather information and return findings to the writer workflow.
+
+The current scraping implementation extracts text from HTML and limits the returned content to 12,000 characters per page. Some websites may block requests or require JavaScript rendering.
+
+## 📁 Project Structure
 
 ```text
 multi-agent-code-assistant/
 │
-├── agents.py
-├── chains.py
-├── model.py
-├── prompts.py
-├── supervisor.py
-├── pipeline.py
-├── tools.py
-├── requirements.txt
-├── README.md
-└── .env
+├── agents.py          # Research agent and tool registration
+├── chains.py          # LCEL chains for agent workflows
+├── model.py           # Groq model and Tavily configuration
+├── prompts.py         # Prompts for supervisor and specialized agents
+├── supervisor.py      # Structured supervisor routing
+├── pipeline.py        # Main orchestration and state management
+├── tools.py           # Web search and website scraping tools
+├── requirements.txt   # Python dependencies
+├── .env               # Local API keys (not committed)
+├── .gitignore         # Files excluded from version control
+└── README.md
 ```
 
-`model.py`
+### Core Components
 
-Contains the LLM configuration.
+**`model.py`**
 
-The project uses a Groq-hosted OpenAI GPT OSS model through LangChain.
+Initializes the Groq-hosted model using LangChain's `init_chat_model` and configures the Tavily client.
 
-`prompts.py`
+**`prompts.py`**
 
-Contains the prompts for:
+Contains the instructions for the supervisor, writer, reviewer, explainer, final response agent, and web-content processing.
 
-- Writer
-- Reviewer
-- Explainer
-- Supervisor
-- Final response
+**`chains.py`**
 
-Keeping prompts separate makes the agents easier to modify and maintain.
+Defines reusable LCEL workflows by composing prompts, the language model, runnable components, and output parsers.
 
-`chains.py`
+**`supervisor.py`**
 
-Creates the individual LangChain chains:
+Defines the supervisor's structured output using Pydantic and creates the chain responsible for agent selection.
 
-```text
-Prompt → Model → Output Parser
-```
+**`pipeline.py`**
 
-`supervisor.py`
+Coordinates the complete workflow, maintains the execution state, invokes selected agents, and generates the final response.
 
-The supervisor decides which agents should execute.
+**`agents.py`**
 
-It uses **Pydantic structured output** to return a predictable structure such as:
+Creates the research agent and makes the search and scraping tools available to it.
 
-```python
-{
-    "agents": ["writer", "reviewer", "explainer"],
-    "reason": "The user requested code, a review, and an explanation."
-}
-```
+**`tools.py`**
 
-`pipeline.py`
+Implements the Tavily web-search tool and the webpage text-extraction tool.
 
-Controls the complete workflow:
+## 🛠️ Technology Stack
 
-1. Receives the user request.
-2. Calls the supervisor.
-3. Executes the selected agents.
-4. Passes generated code to reviewer/explainer when required.
-5. Sends the outputs to the final response agent.
-6. Returns the final answer.
+- **Python** — application logic and orchestration
+- **LangChain** — agent creation and model integration
+- **LangChain Core / LCEL** — reusable processing pipelines
+- **Groq** — language-model inference
+- **OpenAI GPT-OSS 20B** — model configured through Groq
+- **Pydantic** — structured supervisor output
+- **Tavily** — web search
+- **Requests** — webpage fetching
+- **Beautiful Soup 4** — HTML parsing
+- **python-dotenv** — environment-variable loading
 
-`tools.py`
+## ⚙️ Installation and Setup
 
-Reserved for future tool integrations. The current version intentionally uses **LLM-only agents**.
-
----
-
-🔄 Example Workflow
-
-User Request
-
-```text
-Write a Python function to check whether a number is prime.
-Review the code and explain it.
-```
-
-Supervisor
-
-The supervisor may decide:
-
-```text
-writer → reviewer → explainer
-```
-
-Writer
-
-Generates the Python implementation.
-
-Reviewer
-
-Receives the writer's code and checks:
-
-- Logical correctness
-- Edge cases
-- Code quality
-- Efficiency
-
-Explainer
-
-Receives the code and explains how it works.
-
-Final Response Agent
-
-Combines the relevant outputs into one clean response for the user.
-
----
-
-🛠️ Technologies
-
-- **Python**
-- **LangChain**
-- **LangChain Core**
-- **Groq**
-- **Pydantic**
-- **python-dotenv**
-
-⚙️ Installation
-
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
-git clone <your-repository-url>
-cd <your-repository-folder>
+git clone <YOUR_REPOSITORY_URL>
+cd multi-agent-code-assistant
 ```
 
-Create a virtual environment:
+Replace `<YOUR_REPOSITORY_URL>` with your GitHub repository URL.
+
+### 2. Create a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-Activate it on Windows:
+Activate it on Windows PowerShell:
 
-```bash
-.venv\Scripts\activate
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
-Install dependencies:
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-🔑 Environment Variables
+### 4. Configure environment variables
 
-Create a `.env` file:
+Create a `.env` file in the project root:
 
 ```env
 GROQ_API_KEY=your_groq_api_key
+TAVILY_API_KEY=your_tavily_api_key
 ```
 
-Never commit your `.env` file to GitHub.
+Obtain the required API keys from the relevant service providers. Ensure your configured model is available through Groq.
 
-Add it to `.gitignore`:
+**Security:** Never commit your actual API keys or `.env` file to GitHub. Add the following entries to `.gitignore`:
 
-```text
+```gitignore
 .env
 .venv/
 __pycache__/
+*.py[cod]
 ```
-▶️ Running the Project
 
-Run:
+### 5. Run the application
 
 ```bash
 python pipeline.py
 ```
 
-Then enter a coding request:
+Enter your request when prompted.
+
+## 💻 Example Requests
+
+**Code generation**
 
 ```text
-Enter a topic you want to write code about:
+Write a Python function that checks whether a number is prime.
 ```
 
-Example:
+**Concept explanation**
 
 ```text
-Write a Python function to reverse a string and review the code.
+Explain how Retrieval-Augmented Generation (RAG) works.
 ```
 
-🎯 Project Goal
+**Code review**
 
-The goal of this project is to understand how **multi-agent LLM systems** can be designed using LangChain.
+```text
+Review this Python list comprehension for syntax errors:
+[num for num in numbers}
+```
 
-Instead of treating an LLM as one general-purpose assistant, the project separates responsibilities between specialized agents and uses a supervisor to coordinate them.
+**Multi-agent workflow**
 
-This project focuses particularly on:
+```text
+Write a Python function to calculate factorial, review the code,
+and explain how it works.
+```
 
-- Agent orchestration
-- Dynamic routing
-- Structured LLM output
-- LCEL
-- State management
-- Agent-to-agent communication
-- Multi-step LLM workflows
+The supervisor determines the appropriate agent sequence based on the request.
 
-🔮 Future Improvements
+## 🧩 Example Workflow
 
-Possible future additions include:
+For the request:
 
+> Write a Python function to check whether a number is prime, review it, and explain how it works.
+
+The supervisor may select:
+
+```text
+Writer → Reviewer → Explainer → Final Response
+```
+
+- The **Writer** generates the implementation.
+- The **Reviewer** checks the generated code and suggests corrections if needed.
+- The **Explainer** describes how the implementation works.
+- The **Final Response Agent** combines the relevant results into one answer.
+
+The actual sequence depends on the supervisor's routing decision.
+
+## 🔧 Current Limitations
+
+- Agent routing depends on LLM-generated decisions and may require validation.
+- Code review is based on model reasoning; code is not automatically executed or tested.
+- Web research quality depends on search results and webpage accessibility.
+- Some websites block scraping or require JavaScript rendering.
+- Research context may be incomplete or contain irrelevant information.
+- Reviewing user-provided code requires that the code be passed correctly through the pipeline.
+- Model availability, rate limits, and API usage depend on the configured providers.
+
+## 🗺️ Future Improvements
+
+Potential enhancements include:
+
+- Automated code execution in a secure sandbox
+- Unit-test generation and execution with `pytest`
+- More robust input validation and error handling
+- Improved state management and agent-routing validation
+- Source attribution and research verification
+- Conversation memory for follow-up requests
 - Streaming responses
-- Better error handling
-- Parallel agent execution where appropriate
-- Conversation memory
-- More specialized coding agents
-- Unit-test generation
-- Code execution and testing
+- Parallel execution for independent tasks
 - GitHub integration
-- Web/documentation research agents
-- LangGraph-based orchestration
+- A Streamlit user interface
+- LangGraph-based orchestration for more advanced stateful workflows
 
-👨‍💻 Author
+## 🎯 Learning Objectives
+
+This project explores practical concepts in Generative AI engineering:
+
+- Multi-agent system design
+- Supervisor-based routing
+- Agent tool calling
+- LangChain LCEL composition
+- Structured output with Pydantic
+- State management and sequential execution
+- Prompt engineering
+- Web research and content extraction
+- Multi-step LLM orchestration
+
+## 👨‍💻 Author
 
 **Muhammad Shah Fahad**
 
 BS Computer Science | Machine Learning & Generative AI Learner
 
-This project is part of my learning journey into **Generative AI, LangChain, and multi-agent systems**.
+This project is part of my journey toward building practical Generative AI applications and developing skills in agent orchestration, LLM workflows, and AI engineering.
+
+---
+
+*Built with Python, LangChain, and Groq.*
