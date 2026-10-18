@@ -1,89 +1,97 @@
 # 🤖 Multi-Agent Code Assistant
 
-A Python-based multi-agent AI system built with **LangChain, LCEL, and Groq**. It uses a supervisor to dynamically route user requests to specialized agents for code generation, code review, and code explanation, then combines their outputs into a final response.
+A Python-based multi-agent AI application built with **LangChain, LCEL, and Groq**. The system uses a supervisor to dynamically select specialized agents, coordinate their execution, and synthesize their outputs into a final response.
 
-The project explores how specialized LLM agents can collaborate through structured routing, sequential execution, and reusable processing chains.
+It also integrates web research capabilities through **Tavily Search** and **Beautiful Soup**, enabling the research agent to retrieve relevant information from the web when needed.
 
 ## 🚀 Key Features
 
-- **Supervisor-based orchestration** — selects the agents required for each request.
-- **Code generation** — generates code according to the user's requirements.
-- **Code review** — identifies potential bugs, logical errors, edge cases, and improvements.
-- **Code explanation** — explains programming concepts and code in understandable language.
-- **Structured output** — uses Pydantic to define the supervisor's routing decisions.
-- **LCEL pipelines** — composes prompts, models, and output parsers into reusable chains.
-- **Web research tools** — integrates Tavily Search and Beautiful Soup for searching and extracting webpage content.
-- **Final response synthesis** — combines relevant agent outputs into a single response.
-- **Environment-based configuration** — manages API keys through environment variables.
+- **Dynamic Agent Routing** — Selects the appropriate agents based on the user's request.
+- **Code Generation** — Generates code according to user requirements.
+- **Code Review** — Analyzes code for potential bugs, logical errors, edge cases, and improvements.
+- **Code Explanation** — Explains code and programming concepts clearly.
+- **Web Research** — Uses Tavily to search for relevant information and identify useful webpages.
+- **Website Scraping** — Extracts readable text from webpages using Requests and Beautiful Soup.
+- **Structured Output** — Uses Pydantic to define the supervisor's routing decisions.
+- **LCEL Pipelines** — Composes prompts, models, and output parsers into reusable workflows.
+- **Agent Coordination** — Passes relevant outputs between selected agents.
+- **Final Response Synthesis** — Combines relevant results into a unified answer.
+- **Environment Configuration** — Loads API credentials through environment variables.
 
-## 🏗️ Architecture
-
-The supervisor determines which agents should execute and in what order. The selected agents run sequentially, and their outputs are passed to the final response agent.
+## 🏗️ System Architecture
 
 ```text
-                 ┌────────────────────┐
-                 │    User Request    │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │  Supervisor Agent  │
-                 │  Pydantic Routing  │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │  Selected Agents   │
-                 └─────────┬──────────┘
-                           │
-             ┌─────────────┼─────────────┐
-             ▼             ▼             ▼
-          Writer        Reviewer      Explainer
-             │             │             │
-             └─────────────┼─────────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │ Final Response     │
-                 │ Agent              │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                    Final Answer
+                    ┌─────────────────────┐
+                    │    User Request     │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │  Supervisor Agent   │
+                    │  Structured Routing  │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │  Selected Agents    │
+                    └──────────┬──────────┘
+                               │
+                 ┌─────────────┼─────────────┐
+                 ▼             ▼             ▼
+              Writer        Reviewer      Explainer
+                 │             │             │
+                 └─────────────┼─────────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ Final Response Agent│
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                         Final Answer
+
+
+              Research Agent (when invoked)
+                               │
+                     ┌─────────┴─────────┐
+                     ▼                   ▼
+                Tavily Search      Website Scraper
+                                   Requests + Beautiful Soup
 ```
 
-The agents are not all required for every request. For example, a conceptual question may only need the explainer, while a request to generate, review, and explain code may require all three specialized agents.
+The supervisor determines which specialist agents should execute and in what order. The research agent provides access to web search and webpage extraction tools when the workflow requires external information.
 
-### Agent Responsibilities
+## 🧠 Agents and Responsibilities
 
 | Agent | Responsibility |
 |---|---|
-| **Supervisor** | Analyzes the request and selects agents in execution order. |
-| **Writer** | Generates code based on the user's requirements. |
-| **Reviewer** | Reviews code for correctness, edge cases, and potential improvements. |
-| **Explainer** | Explains code or programming concepts. |
-| **Final Response** | Produces the final answer from the relevant agent outputs. |
-| **Research Agent** | Uses web-search and scraping tools when research is required by the writer workflow. |
+| **Supervisor Agent** | Analyzes the request and selects agents in execution order. |
+| **Writer Agent** | Generates code based on the user's requirements. |
+| **Reviewer Agent** | Reviews code for potential errors, edge cases, and improvements. |
+| **Explainer Agent** | Explains code or programming concepts. |
+| **Research Agent** | Searches for relevant information and retrieves webpage content using its available tools. |
+| **Final Response Agent** | Combines relevant agent outputs into the final response. |
 
-## 🧠 How It Works
+## 🔍 Research Tools
 
-1. **Receive request:** The user submits a coding or programming-related question.
-2. **Determine workflow:** The supervisor produces a structured routing decision.
-3. **Execute selected agents:** The pipeline invokes the selected agents in the specified order.
-4. **Gather research when needed:** The writer workflow can invoke the research agent, which has access to Tavily Search and website-scraping tools.
-5. **Share outputs:** Relevant agent results are stored in the pipeline state and passed to downstream agents.
-6. **Generate final response:** The final response agent combines the available outputs into an answer suited to the original request.
+### 1. Tavily Search
 
-## 🔍 Web Research
+Searches the web for information relevant to a query and returns search results that can help the research agent identify useful sources.
 
-The project includes two research tools:
+### 2. Website Scraper
 
-- **Tavily Search:** Finds relevant webpages for a given query.
-- **Beautiful Soup:** Extracts readable text from webpage HTML fetched using Requests.
+Uses **Requests** to fetch webpage HTML and **Beautiful Soup** to extract readable text. The current implementation removes common non-content elements, such as scripts, styles, navigation, headers, and footers.
 
-The research agent can use these tools to gather information and return findings to the writer workflow.
+The scraper limits the returned text to 12,000 characters per page. Websites that block automated requests or require JavaScript rendering may not be accessible.
 
-The current scraping implementation extracts text from HTML and limits the returned content to 12,000 characters per page. Some websites may block requests or require JavaScript rendering.
+## ⚙️ How It Works
+
+1. **User Request:** The user submits a coding task or programming question.
+2. **Supervisor Routing:** The supervisor produces a structured decision identifying the agents required for the task.
+3. **Agent Execution:** The pipeline executes the selected agents in the specified order.
+4. **Web Research:** When invoked, the research agent uses Tavily Search and website scraping to gather relevant information.
+5. **State Management:** The pipeline stores agent outputs and passes relevant information to subsequent agents.
+6. **Response Synthesis:** The final response agent combines the available outputs into a single response.
 
 ## 📁 Project Structure
 
@@ -91,71 +99,49 @@ The current scraping implementation extracts text from HTML and limits the retur
 multi-agent-code-assistant/
 │
 ├── agents.py          # Research agent and tool registration
-├── chains.py          # LCEL chains for agent workflows
+├── chains.py          # LCEL chains and processing workflows
 ├── model.py           # Groq model and Tavily configuration
-├── prompts.py         # Prompts for supervisor and specialized agents
+├── prompts.py         # Prompts for agents and supervisor
 ├── supervisor.py      # Structured supervisor routing
-├── pipeline.py        # Main orchestration and state management
-├── tools.py           # Web search and website scraping tools
-├── requirements.txt   # Python dependencies
-├── .env               # Local API keys (not committed)
+├── pipeline.py        # Main workflow and state management
+├── tools.py           # Web search and webpage scraping tools
+├── requirements.txt   # Project dependencies
+├── .env               # Local API credentials (not committed)
 ├── .gitignore         # Files excluded from version control
 └── README.md
 ```
 
-### Core Components
+### Core Modules
 
-**`model.py`**
-
-Initializes the Groq-hosted model using LangChain's `init_chat_model` and configures the Tavily client.
-
-**`prompts.py`**
-
-Contains the instructions for the supervisor, writer, reviewer, explainer, final response agent, and web-content processing.
-
-**`chains.py`**
-
-Defines reusable LCEL workflows by composing prompts, the language model, runnable components, and output parsers.
-
-**`supervisor.py`**
-
-Defines the supervisor's structured output using Pydantic and creates the chain responsible for agent selection.
-
-**`pipeline.py`**
-
-Coordinates the complete workflow, maintains the execution state, invokes selected agents, and generates the final response.
-
-**`agents.py`**
-
-Creates the research agent and makes the search and scraping tools available to it.
-
-**`tools.py`**
-
-Implements the Tavily web-search tool and the webpage text-extraction tool.
+- **`model.py`** — Configures the language model and Tavily client.
+- **`prompts.py`** — Stores the prompts used by the supervisor, specialist agents, and final response workflow.
+- **`chains.py`** — Defines reusable LCEL chains by composing prompts, models, runnable components, and output parsers.
+- **`supervisor.py`** — Defines the Pydantic schema and structured routing chain.
+- **`pipeline.py`** — Coordinates agent execution, manages state, and produces the final response.
+- **`agents.py`** — Defines the research agent and its available tools.
+- **`tools.py`** — Implements web search and webpage text extraction.
 
 ## 🛠️ Technology Stack
 
-- **Python** — application logic and orchestration
-- **LangChain** — agent creation and model integration
-- **LangChain Core / LCEL** — reusable processing pipelines
-- **Groq** — language-model inference
-- **OpenAI GPT-OSS 20B** — model configured through Groq
-- **Pydantic** — structured supervisor output
-- **Tavily** — web search
-- **Requests** — webpage fetching
+- **Python** — Application logic
+- **LangChain** — Agent creation and model integration
+- **LangChain Core / LCEL** — Workflow composition
+- **Groq** — Language-model inference
+- **OpenAI GPT-OSS 20B** — Model configured through Groq
+- **Pydantic** — Structured output validation
+- **Tavily** — Web search
+- **Requests** — HTTP requests
 - **Beautiful Soup 4** — HTML parsing
-- **python-dotenv** — environment-variable loading
+- **python-dotenv** — Environment-variable management
 
-## ⚙️ Installation and Setup
+## 💻 Installation and Setup
 
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/Muhammad-ShahFahad/multi-agent-code-assistant.git
 cd multi-agent-code-assistant
 ```
-
-Replace `<YOUR_REPOSITORY_URL>` with your GitHub repository URL.
 
 ### 2. Create a virtual environment
 
@@ -184,9 +170,11 @@ GROQ_API_KEY=your_groq_api_key
 TAVILY_API_KEY=your_tavily_api_key
 ```
 
-Obtain the required API keys from the relevant service providers. Ensure your configured model is available through Groq.
+Replace the placeholder values with your API keys. Ensure that the configured model is available through Groq.
 
-**Security:** Never commit your actual API keys or `.env` file to GitHub. Add the following entries to `.gitignore`:
+**Security:** Never commit API keys or your `.env` file to GitHub.
+
+Ensure your `.gitignore` includes:
 
 ```gitignore
 .env
@@ -203,94 +191,71 @@ python pipeline.py
 
 Enter your request when prompted.
 
-## 💻 Example Requests
+## 📝 Example Requests
 
-**Code generation**
+### Code Generation
 
 ```text
 Write a Python function that checks whether a number is prime.
 ```
 
-**Concept explanation**
+### Concept Explanation
 
 ```text
 Explain how Retrieval-Augmented Generation (RAG) works.
 ```
 
-**Code review**
+### Code Review
 
 ```text
 Review this Python list comprehension for syntax errors:
 [num for num in numbers}
 ```
 
-**Multi-agent workflow**
+### Multi-Agent Task
 
 ```text
-Write a Python function to calculate factorial, review the code,
-and explain how it works.
+Write a Python function to calculate factorial,
+review the implementation, and explain how it works.
 ```
 
-The supervisor determines the appropriate agent sequence based on the request.
-
-## 🧩 Example Workflow
-
-For the request:
-
-> Write a Python function to check whether a number is prime, review it, and explain how it works.
-
-The supervisor may select:
-
-```text
-Writer → Reviewer → Explainer → Final Response
-```
-
-- The **Writer** generates the implementation.
-- The **Reviewer** checks the generated code and suggests corrections if needed.
-- The **Explainer** describes how the implementation works.
-- The **Final Response Agent** combines the relevant results into one answer.
-
-The actual sequence depends on the supervisor's routing decision.
+The supervisor determines which agents are appropriate for each request. The selected workflow may vary depending on the task.
 
 ## 🔧 Current Limitations
 
-- Agent routing depends on LLM-generated decisions and may require validation.
-- Code review is based on model reasoning; code is not automatically executed or tested.
-- Web research quality depends on search results and webpage accessibility.
-- Some websites block scraping or require JavaScript rendering.
-- Research context may be incomplete or contain irrelevant information.
-- Reviewing user-provided code requires that the code be passed correctly through the pipeline.
-- Model availability, rate limits, and API usage depend on the configured providers.
+- Agent selection depends on LLM-generated routing decisions.
+- Code review relies on model reasoning and does not automatically execute or test code.
+- Research quality depends on search results and webpage accessibility.
+- Some websites may block scraping or require JavaScript rendering.
+- User-provided code must be passed correctly to the reviewer.
+- Model availability, API quotas, and rate limits depend on the configured providers.
 
-## 🗺️ Future Improvements
+## 🔮 Future Improvements
 
-Potential enhancements include:
-
-- Automated code execution in a secure sandbox
-- Unit-test generation and execution with `pytest`
-- More robust input validation and error handling
-- Improved state management and agent-routing validation
-- Source attribution and research verification
-- Conversation memory for follow-up requests
-- Streaming responses
-- Parallel execution for independent tasks
-- GitHub integration
-- A Streamlit user interface
-- LangGraph-based orchestration for more advanced stateful workflows
+- Secure code execution and automated testing.
+- Unit-test generation with `pytest`.
+- Improved error handling, retries, and input validation.
+- Stronger validation of supervisor routing decisions.
+- Better source attribution and research verification.
+- Conversation memory and streaming responses.
+- Parallel execution for independent tasks.
+- GitHub integration.
+- A Streamlit user interface.
+- LangGraph-based orchestration for more advanced stateful workflows.
 
 ## 🎯 Learning Objectives
 
-This project explores practical concepts in Generative AI engineering:
+This project explores practical Generative AI engineering concepts:
 
-- Multi-agent system design
-- Supervisor-based routing
-- Agent tool calling
-- LangChain LCEL composition
-- Structured output with Pydantic
-- State management and sequential execution
-- Prompt engineering
-- Web research and content extraction
-- Multi-step LLM orchestration
+- Multi-agent architecture and orchestration.
+- Supervisor-based routing.
+- Tool calling and web research.
+- LangChain Expression Language (LCEL).
+- Structured output with Pydantic.
+- State management and sequential execution.
+- Prompt engineering.
+- External API integration.
+- Multi-step LLM workflows.
 
 ## 👨‍💻 Author
 
@@ -298,8 +263,7 @@ This project explores practical concepts in Generative AI engineering:
 
 BS Computer Science | Machine Learning & Generative AI Learner
 
-This project is part of my journey toward building practical Generative AI applications and developing skills in agent orchestration, LLM workflows, and AI engineering.
+This project is part of my journey toward building practical Generative AI applications and developing expertise in agent orchestration, LLM workflows, and AI engineering.
 
----
 
 *Built with Python, LangChain, and Groq.*
